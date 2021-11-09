@@ -1,8 +1,7 @@
 package com;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 //Анализатор цикла while в языке с++
 public class Analyzer implements Serializable{
@@ -14,7 +13,8 @@ public class Analyzer implements Serializable{
 
     private Error error = Error.NO_ERROR;
     private final List<Character> constants = new ArrayList<>();
-    private final List<Character> idNames = new ArrayList<>();
+    private List<Character> idNames = new ArrayList<>();
+    private String savedInput;
     private int pos;
 
     private static final char SPACE = ' ';
@@ -138,6 +138,7 @@ public class Analyzer implements Serializable{
 
     public void analyze(final String input) {
         if (input.isEmpty()) {return;}
+        savedInput = input;
         State state = State.START;
         final char[] str = input.toCharArray();
 
@@ -970,15 +971,19 @@ public class Analyzer implements Serializable{
 
     //Вывод
     public void outOnScreen() {
+        System.out.println("-----------------------------------------------------------------------------------------");
+        System.out.println(savedInput);
         if (error.equals(Error.NO_ERROR)){
             System.out.println(ConsoleColors.GREEN_BOLD_BRIGHT + error.message() + ConsoleColors.RESET);
 
+            idNames = getUniqueIds();
             printLine(Math.max(idNames.size(), constants.size()));
             System.out.print("id\t\t|\t");
             for (final Character character : idNames) {
                 System.out.print(character);
             }
             System.out.println();
+
             printLine(Math.max(idNames.size(), constants.size()));
             System.out.print("const\t|\t");
             for (final Character character : constants) {
@@ -988,7 +993,7 @@ public class Analyzer implements Serializable{
             printLine(Math.max(idNames.size(), constants.size()));
         } else {
             for (int i = 0; i < pos; i++) {
-                if (i == pos - 1) {System.out.print("^");}
+                if (i == pos - 1) {System.out.print(ConsoleColors.YELLOW_BOLD_BRIGHT + "^" + ConsoleColors.RESET);}
                 else {System.out.print(" ");}
             }
             System.out.println("\n" +
@@ -1000,6 +1005,26 @@ public class Analyzer implements Serializable{
                     "\"" +
                     ConsoleColors.RESET);
         }
+    }
+
+    //Метод избавления от дубликатов массива idNames
+    private ArrayList<Character> getUniqueIds() {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (final Character character : idNames) {
+            stringBuilder.append(character);
+        }
+        String[] strArray = stringBuilder.toString().split(" ");
+        stringBuilder.delete(0, stringBuilder.length());
+        Set<String> resultStrArray = new HashSet<>(Arrays.asList(strArray));
+        for (String element : resultStrArray) {
+            stringBuilder.append(element).append(" ");
+        }
+        ArrayList<Character> result = new ArrayList<>();
+        char[] interCharArray = stringBuilder.toString().toCharArray();
+        for (char chr : interCharArray) {
+            result.add(chr);
+        }
+        return result;
     }
 
     //Метод вывода линии
@@ -1154,6 +1179,7 @@ public class Analyzer implements Serializable{
         int innerIndex = 0;
         final ArrayList<Character> checkable = new ArrayList<>();
         final StringBuilder checkableStr = new StringBuilder();
+
         while (innerIndex < idNames.size()) {
             for (; idNames.get(innerIndex) != ' '; pos++) {
                 if (input[pos] == idNames.get(innerIndex)) {
